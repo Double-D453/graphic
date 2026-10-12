@@ -1,0 +1,6 @@
+# Собранные финалы лежат в Google Drive (источник истины) и пересобираются скриптом.
+final/
+out/
+*.zip
+__pycache__/
+node_modules/
