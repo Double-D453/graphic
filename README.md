@@ -39,7 +39,7 @@ final/       собранная серия (v01)
 ## Пересборка серии
 ```bash
 pip install pillow numpy
-cd build && python3 build.py     # пишет в ../final
+cd src && python3 build.py     # пишет в ../final
 ```
 
 ## Важно (достоверность и правила)
