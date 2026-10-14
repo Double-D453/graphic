@@ -24,7 +24,7 @@ def cutout(src: str, out: str, lum_min: float = 150, sat_max: float = 26,
     lum, sat = a.mean(axis=2), a.max(axis=2) - a.min(axis=2)
     bg_like = (lum > lum_min) & (sat < sat_max)
 
-    m = Image.fromarray(np.where(bg_like, 255, 0).astype(np.uint8), "L")
+    m = Image.fromarray(np.where(bg_like, 255, 0).astype(np.uint8), "L").copy()
     for corner in ((0, 0), (m.width - 1, 0), (0, m.height - 1), (m.width - 1, m.height - 1)):
         if m.getpixel(corner) == 255:
             ImageDraw.floodfill(m, corner, 128, thresh=0)
@@ -69,7 +69,7 @@ def main() -> None:
     print("крупные планы реального товара:")
     im, (cx, cy, R, k) = disc_geometry(G + "_MG_0459.JPG")
     ang = math.radians(175)
-    S = int(560 / k)
+    S = min(1400, int(560 / k))
     mx, my = cx + 0.70 * R * math.cos(ang), cy + 0.70 * R * math.sin(ang)
     crop = im.crop((int(mx - S / 2), int(my - S / 2), int(mx + S / 2), int(my + S / 2)))
     crop = ImageEnhance.Sharpness(ImageEnhance.Contrast(crop).enhance(1.12)).enhance(1.35)
