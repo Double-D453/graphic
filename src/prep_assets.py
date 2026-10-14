@@ -68,11 +68,32 @@ def main() -> None:
 
     print("крупные планы реального товара:")
     im, (cx, cy, R, k) = disc_geometry(G + "_MG_0459.JPG")
-    ang = math.radians(175)
-    S = min(1400, int(560 / k))
-    mx, my = cx + 0.70 * R * math.cos(ang), cy + 0.70 * R * math.sin(ang)
-    crop = im.crop((int(mx - S / 2), int(my - S / 2), int(mx + S / 2), int(my + S / 2)))
-    crop = ImageEnhance.Sharpness(ImageEnhance.Contrast(crop).enhance(1.12)).enhance(1.35)
+    # окно макро подбираем автоматически: кромка кадра не должна попадать на отверстие/фон
+    best = None
+    for scale in (0.34, 0.30, 0.26, 0.22):
+        for ang_deg in (150, 165, 175, 185, 200, 215, 240, 270):
+            ang = math.radians(ang_deg)
+            S = int(scale * 2 * R)
+            mx = cx + 0.76 * R * math.cos(ang)
+            my = cy + 0.76 * R * math.sin(ang)
+            box = (int(mx - S / 2), int(my - S / 2), int(mx + S / 2), int(my + S / 2))
+            if box[0] < 0 or box[1] < 0 or box[2] > im.width or box[3] > im.height:
+                continue
+            c = np.asarray(im.crop(box)).astype(np.int16)
+            lum = c.mean(axis=2)
+            band = 0.07
+            b = int(S * band)
+            edges = np.concatenate([lum[:b].ravel(), lum[-b:].ravel(),
+                                    lum[:, :b].ravel(), lum[:, -b:].ravel()])
+            hole_like = (edges > 168).mean()                 # край отверстия/фон
+            sat = ((c[..., 0] - c[..., 2]) > 28).mean()      # доля рабочей стороны
+            score = sat - hole_like * 6
+            if best is None or score > best[0]:
+                best = (score, box, hole_like, sat, S)
+    score, box, hole_like, sat, S = best
+    print(f"  окно макро: {S}px, край-артефакты {hole_like*100:.2f}%, рабочая сторона {sat*100:.1f}%")
+    crop = im.crop(box)
+    crop = ImageEnhance.Sharpness(ImageEnhance.Contrast(crop).enhance(1.12)).enhance(1.3)
     crop.save(A + "macro_surface.jpg", quality=96)
     print(f"  macro_surface.jpg: {crop.size}")
 
